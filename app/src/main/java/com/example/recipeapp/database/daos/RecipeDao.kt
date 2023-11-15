@@ -19,6 +19,10 @@ interface RecipeDao {
     @Query("SELECT * FROM Recipe WHERE id = :id")
     fun getSingleRecipesById(id: Int) : Flow<Recipe>
 
+    @Transaction
+    @Query("SELECT * FROM Recipe ORDER BY dateTimeAdded LIMIT 1")
+    fun getLatestAddedRecipe() : Flow<Recipe>
+
     @Upsert
     suspend fun upsertRecipe(recipe: Recipe)
 

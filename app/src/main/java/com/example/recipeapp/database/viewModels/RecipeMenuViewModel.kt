@@ -1,5 +1,7 @@
 package com.example.recipeapp.database.viewModels
 
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recipeapp.database.daos.RecipeDao
@@ -8,6 +10,7 @@ import com.example.recipeapp.database.tables.Recipe
 import com.example.recipeapp.dataclasses.Ingredients
 import com.example.recipeapp.dataclasses.RecipeSteps
 import com.example.recipeapp.states.RecipeState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -21,6 +24,7 @@ class RecipeMenuViewModel(
 ) : ViewModel() {
 
     private val _allRecipesState = MutableStateFlow(emptyList<Recipe>())
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val _allRecipes = _allRecipesState
         .flatMapLatest { _ -> recipeDao.getAllRecipes() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -43,9 +47,9 @@ class RecipeMenuViewModel(
 
             RecipeEvent.SaveRecipe -> {
 
-                val recipeName = state.value.recipeName
-                val recipeIngredients = state.value.recipeIngredients
-                val recipeSteps = state.value.recipeSteps
+                val recipeName = _state.value.recipeName
+                val recipeIngredients = _state.value.recipeIngredients
+                val recipeSteps = _state.value.recipeSteps
 
                 if (recipeName.isBlank()) return
                 val recipe = Recipe(
@@ -84,6 +88,8 @@ class RecipeMenuViewModel(
                     recipeSteps = event.recipeSteps
                 ) }
             }
+
+            else -> {}
         }
     }
 }

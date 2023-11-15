@@ -12,6 +12,8 @@ sealed interface RecipeEvent {
     data class SetRecipeIngredients(val recipeIngredients: Ingredients) : RecipeEvent
     data class SetRecipeSteps(val recipeSteps: RecipeSteps) : RecipeEvent
 
+    data class SetRecipeId(val recipeId: Int) : RecipeEvent
+
     data class DeleteRecipe(val recipe: Recipe) : RecipeEvent
 
 }

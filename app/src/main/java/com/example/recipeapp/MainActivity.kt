@@ -9,11 +9,16 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
-import com.example.recipeapp.composables.main.MainScaffold
+import com.example.recipeapp.composables.main.MainView
 import com.example.recipeapp.database.AppDatabase
 import com.example.recipeapp.database.viewModels.RecipeMenuViewModel
 
 class MainActivity : ComponentActivity() {
+
+    //TODO: Check if the plural form of an ingredient is used if no measurement is used an the value is above 1
+    //TODO: Settings
+    //TODO: Editing
+    //TODO: New recipe creation
 
     private val database by lazy {
         Room.databaseBuilder(
@@ -38,7 +43,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val state by recipesViewModel.state.collectAsState()
-            MainScaffold(state = state, onEvent = recipesViewModel::onEvent)
+            MainView(state = state, onEvent = recipesViewModel::onEvent, context = this@MainActivity)
         }
     }
 
