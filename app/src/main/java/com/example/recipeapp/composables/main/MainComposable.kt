@@ -84,34 +84,9 @@ fun MainView(
         Scaffold (
             floatingActionButton = {
                 FloatingActionButton(onClick = {
-                    onEvent(RecipeEvent.SetRecipeName("Test"))
-                    onEvent(
-                        RecipeEvent.SetRecipeIngredients(
-                            Ingredients(
-                                ingredients = listOf(
-                                    Ingredient(
-                                        name = "Apfel",
-                                        amount = 2,
-                                        measuringUnit = MeasuringUnit.NONE,
-                                    ),
-                                    Ingredient(
-                                        name = "Birne",
-                                        amount = 4,
-                                        measuringUnit = MeasuringUnit.NONE,
-                                    ),
-                                ),
-                                amountOfIngredients = 2
-                            )
-                        ))
-                    onEvent(
-                        RecipeEvent.SetRecipeSteps(
-                            RecipeSteps(
-                                steps = listOf("test1","test2","test4"),
-                                amountOfSteps = 3,
-                                timeNeededInMinutes = 45
-                            )
-                        ))
-                    onEvent(RecipeEvent.SaveRecipe)
+                    startActivity(context, Intent(context, RecipeActivity::class.java).apply {
+                        putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityCallReason.NEW.stringify)
+                    }, null)
                 }) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = "Add new Recipe")
                 }

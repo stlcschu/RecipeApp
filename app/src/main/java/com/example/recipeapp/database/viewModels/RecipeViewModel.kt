@@ -32,12 +32,11 @@ class RecipeViewModel(
 
     private val _state = MutableStateFlow(RecipeState())
 
-    val state = combine(_state, recipe) {
-            state, recipe ->
+    val state = combine(_state, recipe) { state, recipe ->
         state.copy (
-            recipeName = recipe.name,
-            recipeIngredients = recipe.ingredients,
-            recipeSteps = recipe.steps
+            recipeName = if(_recipeId.intValue <= 0) "" else recipe.name,
+            recipeIngredients = if(_recipeId.intValue <= 0) Ingredients() else recipe.ingredients,
+            recipeSteps = if(_recipeId.intValue <= 0) RecipeSteps() else recipe.steps
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecipeState())
 
@@ -96,6 +95,8 @@ class RecipeViewModel(
             is RecipeEvent.SetRecipeId -> {
                 _recipeId.intValue = event.recipeId
             }
+
+            else -> {}
         }
     }
 

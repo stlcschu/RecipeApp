@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
+import com.example.recipeapp.composables.recipes.NewEditRecipeView
 import com.example.recipeapp.composables.recipes.RecipeView
 import com.example.recipeapp.database.AppDatabase
 import com.example.recipeapp.database.events.RecipeEvent
@@ -42,16 +43,17 @@ class RecipeActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val recipeId = intent.extras!!.getInt(RECIPE_ID_KEY_NAME)
-        recipesViewModel.onEvent(RecipeEvent.SetRecipeId(recipeId))
         val callReason = intent.extras!!.getString(RECIPE_CALL_REASON_KEY_NAME)
             ?.let { RecipeActivityCallReason.fromString(it) }
         setContent {
-            val state by recipesViewModel.state.collectAsState()
+
             when(callReason) {
-                RecipeActivityCallReason.NEW -> TODO()
+                RecipeActivityCallReason.NEW -> NewEditRecipeView(onEvent = recipesViewModel::onEvent)
                 RecipeActivityCallReason.EDIT -> TODO()
                 else -> {
+                    val recipeId = intent.extras!!.getInt(RECIPE_ID_KEY_NAME)
+                    recipesViewModel.onEvent(RecipeEvent.SetRecipeId(recipeId))
+                    val state by recipesViewModel.state.collectAsState()
                     RecipeView(state = state, onEvent = recipesViewModel::onEvent)
                 }
             }
