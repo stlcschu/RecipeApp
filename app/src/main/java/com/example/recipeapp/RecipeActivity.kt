@@ -48,7 +48,7 @@ class RecipeActivity : ComponentActivity() {
         setContent {
 
             when(callReason) {
-                RecipeActivityCallReason.NEW -> NewEditRecipeView(onEvent = recipesViewModel::onEvent)
+                RecipeActivityCallReason.NEW -> NewEditRecipeView(onEvent = recipesViewModel::onEvent, context = this@RecipeActivity)
                 RecipeActivityCallReason.EDIT -> TODO()
                 else -> {
                     val recipeId = intent.extras!!.getInt(RECIPE_ID_KEY_NAME)
