@@ -18,7 +18,6 @@ class MainActivity : ComponentActivity() {
     //TODO: Check if the plural form of an ingredient is used if no measurement is used an the value is above 1
     //TODO: Settings
     //TODO: Editing
-    //TODO: New recipe creation
 
     private val database by lazy {
         Room.databaseBuilder(

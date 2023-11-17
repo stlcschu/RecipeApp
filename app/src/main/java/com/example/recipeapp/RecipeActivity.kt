@@ -15,9 +15,8 @@ import com.example.recipeapp.composables.recipes.NewEditRecipeView
 import com.example.recipeapp.composables.recipes.RecipeView
 import com.example.recipeapp.database.AppDatabase
 import com.example.recipeapp.database.events.RecipeEvent
-import com.example.recipeapp.database.viewModels.RecipeMenuViewModel
 import com.example.recipeapp.database.viewModels.RecipeViewModel
-import com.example.recipeapp.enums.RecipeActivityCallReason
+import com.example.recipeapp.enums.RecipeActivityView
 
 class RecipeActivity : ComponentActivity() {
 
@@ -44,17 +43,17 @@ class RecipeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val callReason = intent.extras!!.getString(RECIPE_CALL_REASON_KEY_NAME)
-            ?.let { RecipeActivityCallReason.fromString(it) }
+            ?.let { RecipeActivityView.fromString(it) }
+        recipesViewModel.onEvent(RecipeEvent.SetRecipeActivityView(callReason!!))
         setContent {
-
             when(callReason) {
-                RecipeActivityCallReason.NEW -> NewEditRecipeView(onEvent = recipesViewModel::onEvent, context = this@RecipeActivity)
-                RecipeActivityCallReason.EDIT -> TODO()
+                RecipeActivityView.NEW -> NewEditRecipeView(onEvent = recipesViewModel::onEvent, context = this@RecipeActivity)
+                RecipeActivityView.EDIT -> TODO()
                 else -> {
                     val recipeId = intent.extras!!.getInt(RECIPE_ID_KEY_NAME)
                     recipesViewModel.onEvent(RecipeEvent.SetRecipeId(recipeId))
                     val state by recipesViewModel.state.collectAsState()
-                    RecipeView(state = state, onEvent = recipesViewModel::onEvent)
+                    RecipeView(state = state, onEvent = recipesViewModel::onEvent, context = this@RecipeActivity)
                 }
             }
 

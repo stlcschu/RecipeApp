@@ -40,11 +40,7 @@ import com.example.recipeapp.RecipeActivity.Companion.RECIPE_CALL_REASON_KEY_NAM
 import com.example.recipeapp.RecipeActivity.Companion.RECIPE_ID_KEY_NAME
 import com.example.recipeapp.database.events.RecipeEvent
 import com.example.recipeapp.database.tables.Recipe
-import com.example.recipeapp.dataclasses.Ingredient
-import com.example.recipeapp.dataclasses.Ingredients
-import com.example.recipeapp.dataclasses.RecipeSteps
-import com.example.recipeapp.enums.MeasuringUnit
-import com.example.recipeapp.enums.RecipeActivityCallReason
+import com.example.recipeapp.enums.RecipeActivityView
 import com.example.recipeapp.states.RecipeState
 import kotlinx.coroutines.launch
 
@@ -55,7 +51,8 @@ fun MainView(
     state: RecipeState,
     onEvent: (RecipeEvent) -> Unit,
     context: Context
-) {val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     ModalNavigationDrawer(
         drawerContent = {
@@ -85,7 +82,7 @@ fun MainView(
             floatingActionButton = {
                 FloatingActionButton(onClick = {
                     startActivity(context, Intent(context, RecipeActivity::class.java).apply {
-                        putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityCallReason.NEW.stringify)
+                        putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityView.NEW.stringify)
                     }, null)
                 }) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = "Add new Recipe")
@@ -96,7 +93,7 @@ fun MainView(
                     title = {
                         Text(text = "")
                     },
-                    actions = {
+                    navigationIcon = {
                         IconButton(
                             onClick = {
                                 scope.launch { drawerState.open() }
@@ -144,7 +141,7 @@ fun RecipeTile(
             .clickable {
                 startActivity(context, Intent(context, RecipeActivity::class.java).apply {
                     putExtra(RECIPE_ID_KEY_NAME, recipe.id)
-                    putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityCallReason.DEFAULT.stringify)
+                    putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityView.DEFAULT.stringify)
                 }, null)
             }
     ) {

@@ -1,14 +1,13 @@
 package com.example.recipeapp.composables.recipes
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
@@ -16,22 +15,35 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.ExposedDropdownMenuDefaults
+import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.text.isDigitsOnly
 import com.example.recipeapp.MainActivity
@@ -41,10 +53,11 @@ import com.example.recipeapp.dataclasses.Ingredient
 import com.example.recipeapp.dataclasses.Ingredients
 import com.example.recipeapp.dataclasses.RecipeSteps
 import com.example.recipeapp.enums.MeasuringUnit
-import com.example.recipeapp.enums.RecipeActivityCallReason
-import com.example.recipeapp.states.RecipeState
+import com.example.recipeapp.enums.RecipeActivityView
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class)
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun NewEditRecipeView(
     onEvent: (RecipeEvent) -> Unit,
@@ -58,181 +71,230 @@ fun NewEditRecipeView(
     var recipeName by remember { mutableStateOf("") }
     val measuringUnits = MeasuringUnit.convertToList()
     var measuringUnitsDropDown by remember { mutableStateOf(listOf<Boolean>()) }
-    Column() {
-        Button(
-            onClick = {
-                onEvent(
-                    RecipeEvent.SetRecipeName(recipeName)
-                )
 
-                val ingredients = combineStatesToIngredientsList(ingredientNames, ingredientAmounts, ingredientMeasuringUnits)
-                onEvent(
-                    RecipeEvent.SetRecipeIngredients(
-                        Ingredients(ingredients = ingredients, amountOfIngredients = ingredients.size)
-                    )
-                )
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    ModalNavigationDrawer(
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Recipe App", modifier = Modifier.padding(16.dp))
+                Divider()
+                NavigationDrawerItem(
+                    label = { Text(text = "Home") },
+                    selected = true,
+                    onClick = {
+                        scope.launch { drawerState.close() }
 
-                onEvent(
-                    RecipeEvent.SetRecipeSteps(
-                        RecipeSteps(steps = cookingSteps, amountOfSteps = cookingSteps.size)
-                    )
+                    }
                 )
-
-                onEvent(
-                    RecipeEvent.SaveRecipe
-                )
-                startActivity(
-                    context,
-                    Intent(context, MainActivity::class.java),
-                    null
+                NavigationDrawerItem(
+                    label = { Text(text = "Settings") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                    }
                 )
             }
-        ) {
-            Text(text = "Save Recipe")
-        }
-
-        OutlinedTextField(
-            value = recipeName,
-            onValueChange = {
-                recipeName = it
-            }
-        )
-
-        LazyColumn(
-
-        ) {
-            item { Text(text = "Ingredients") }
-            itemsIndexed(ingredientNames) {
-                    index, ingredientName ->
-                Row (
-
-                ) {
-
-                    OutlinedTextField(
-                        value = if (ingredientAmounts[index] == 0) "" else ingredientAmounts[index].toString(),
-                        onValueChange = {
-                            if (it.isDigitsOnly()) {
-                                ingredientAmounts = changeIngredientsAmount(ingredientAmounts, it, index)
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(90.dp)
-                    )
-
-                    ExposedDropdownMenuBox(
-                        expanded = measuringUnitsDropDown[index],
-                        onExpandedChange = {
-                            measuringUnitsDropDown = changeMeasurementUnitBoolean(measuringUnitsDropDown, index)
-                        },
-                        modifier = Modifier.width(100.dp)
-                    ) {
-                        TextField(
-                            readOnly = true,
-                            value = ingredientMeasuringUnits[index].stringify,
-                            onValueChange = { },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(
-                                    expanded = measuringUnitsDropDown[index]
-                                )
-                            },
-                            colors = ExposedDropdownMenuDefaults.textFieldColors()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = measuringUnitsDropDown[index],
-                            onDismissRequest = {
-                                measuringUnitsDropDown = changeMeasurementUnitBoolean(measuringUnitsDropDown, index, false)
+        },
+        drawerState = drawerState
+    ) {
+        Scaffold (
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(text = "")
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                scope.launch { drawerState.open() }
                             }
                         ) {
+                            Icon(
+                                imageVector = Icons.Filled.Menu,
+                                contentDescription = "Localized description"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            onEvent(
+                                RecipeEvent.SetRecipeName(recipeName)
+                            )
 
-                            measuringUnits.forEach { selectionOption ->
-                                DropdownMenuItem(
-                                    onClick = {
-                                        ingredientMeasuringUnits = changeIngredientMeasuringUnit(ingredientMeasuringUnits, selectionOption, index)
+                            val ingredients = combineStatesToIngredientsList(ingredientNames, ingredientAmounts, ingredientMeasuringUnits)
+                            onEvent(
+                                RecipeEvent.SetRecipeIngredients(
+                                    Ingredients(ingredients = ingredients, amountOfIngredients = ingredients.size)
+                                )
+                            )
+
+                            onEvent(
+                                RecipeEvent.SetRecipeSteps(
+                                    RecipeSteps(steps = cookingSteps, amountOfSteps = cookingSteps.size)
+                                )
+                            )
+
+                            onEvent(
+                                RecipeEvent.SaveRecipe
+                            )
+                            startActivity(
+                                context,
+                                Intent(context, MainActivity::class.java),
+                                null
+                            )
+                        }) {
+                            Icon(imageVector = Icons.Default.Done, contentDescription = "Save Recipe")
+                        }
+                    }
+                )
+            }
+        ) {
+            Column() {
+                OutlinedTextField(
+                    value = recipeName,
+                    onValueChange = {
+                        recipeName = it
+                    }
+                )
+
+                LazyColumn(
+
+                ) {
+                    item { Text(text = "Ingredients") }
+                    itemsIndexed(ingredientNames) {
+                            index, ingredientName ->
+                        Row (
+
+                        ) {
+
+                            OutlinedTextField(
+                                value = if (ingredientAmounts[index] == 0) "" else ingredientAmounts[index].toString(),
+                                onValueChange = {
+                                    if (it.isDigitsOnly()) {
+                                        ingredientAmounts = changeIngredientsAmount(ingredientAmounts, it, index)
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.width(90.dp)
+                            )
+
+                            ExposedDropdownMenuBox(
+                                expanded = measuringUnitsDropDown[index],
+                                onExpandedChange = {
+                                    measuringUnitsDropDown = changeMeasurementUnitBoolean(measuringUnitsDropDown, index)
+                                },
+                                modifier = Modifier.width(100.dp)
+                            ) {
+                                TextField(
+                                    readOnly = true,
+                                    value = ingredientMeasuringUnits[index].stringify,
+                                    onValueChange = { },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(
+                                            expanded = measuringUnitsDropDown[index]
+                                        )
+                                    },
+                                    colors = ExposedDropdownMenuDefaults.textFieldColors()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = measuringUnitsDropDown[index],
+                                    onDismissRequest = {
                                         measuringUnitsDropDown = changeMeasurementUnitBoolean(measuringUnitsDropDown, index, false)
                                     }
-                                ){
-                                    Text(text = selectionOption.stringify)
+                                ) {
+
+                                    measuringUnits.forEach { selectionOption ->
+                                        DropdownMenuItem(
+                                            onClick = {
+                                                ingredientMeasuringUnits = changeIngredientMeasuringUnit(ingredientMeasuringUnits, selectionOption, index)
+                                                measuringUnitsDropDown = changeMeasurementUnitBoolean(measuringUnitsDropDown, index, false)
+                                            }
+                                        ){
+                                            Text(text = selectionOption.stringify)
+                                        }
+                                    }
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = ingredientName,
+                                onValueChange = {
+                                    ingredientNames = changeIngredientsName(ingredientNames, it, index)
+                                },
+                                singleLine = false,
+                                minLines = 1,
+                                maxLines = 4,
+                                modifier = Modifier.width(200.dp)
+                            )
+
+                            Button(
+                                onClick = {
+                                    val (namesAndAmounts, unitsAndBool) = removeIngredient(ingredientNames, ingredientAmounts, ingredientMeasuringUnits, measuringUnitsDropDown, index)
+                                    ingredientNames = namesAndAmounts.first
+                                    ingredientAmounts = namesAndAmounts.second
+                                    ingredientMeasuringUnits = unitsAndBool.first
+                                    measuringUnitsDropDown = unitsAndBool.second
+                                }
+                            ) {
+                                Icon(imageVector = Icons.Default.Clear, contentDescription = "Remove ingredients")
+                            }
+
+                        }
+                    }
+                    item {
+                        Button(
+                            onClick = {
+                                val (namesAndAmounts, unitsAndBool) = addNewIngredient(ingredientNames, ingredientAmounts, ingredientMeasuringUnits, measuringUnitsDropDown)
+                                ingredientNames = namesAndAmounts.first
+                                ingredientAmounts = namesAndAmounts.second
+                                ingredientMeasuringUnits = unitsAndBool.first
+                                measuringUnitsDropDown = unitsAndBool.second
+                            }
+                        ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = "Add new ingredient")
+                            Text(text = "Add new ingredient")
+                        }
+                    }
+                }
+
+                LazyColumn(
+
+                ) {
+                    item { Text(text = "Koch Schritte") }
+                    itemsIndexed(cookingSteps) {
+                            index, step ->
+                        Column {
+                            Text(text = "${index + 1}")
+                            Row {
+                                OutlinedTextField(
+                                    value = step,
+                                    onValueChange = {
+                                        cookingSteps = changeCookingStepDescription(cookingSteps, it, index)
+                                    },
+                                    singleLine = false,
+                                    minLines = 1
+                                )
+                                Button(
+                                    onClick = {
+                                        cookingSteps = removeRecipeStep(cookingSteps, index)
+                                    }
+                                ) {
+                                    Icon(imageVector = Icons.Default.Clear, contentDescription = "Remove cooking step")
                                 }
                             }
                         }
                     }
-
-                    OutlinedTextField(
-                        value = ingredientName,
-                        onValueChange = {
-                            ingredientNames = changeIngredientsName(ingredientNames, it, index)
-                        },
-                        singleLine = false,
-                        minLines = 1,
-                        maxLines = 4,
-                        modifier = Modifier.width(200.dp)
-                    )
-
-                    Button(
-                        onClick = {
-                            val (namesAndAmounts, unitsAndBool) = removeIngredient(ingredientNames, ingredientAmounts, ingredientMeasuringUnits, measuringUnitsDropDown, index)
-                            ingredientNames = namesAndAmounts.first
-                            ingredientAmounts = namesAndAmounts.second
-                            ingredientMeasuringUnits = unitsAndBool.first
-                            measuringUnitsDropDown = unitsAndBool.second
-                        }
-                    ) {
-                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Remove ingredients")
-                    }
-
-                }
-            }
-            item {
-                Button(
-                    onClick = {
-                        val (namesAndAmounts, unitsAndBool) = addNewIngredient(ingredientNames, ingredientAmounts, ingredientMeasuringUnits, measuringUnitsDropDown)
-                        ingredientNames = namesAndAmounts.first
-                        ingredientAmounts = namesAndAmounts.second
-                        ingredientMeasuringUnits = unitsAndBool.first
-                        measuringUnitsDropDown = unitsAndBool.second
-                    }
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add new ingredient")
-                    Text(text = "Add new ingredient")
-                }
-            }
-        }
-
-        LazyColumn(
-
-        ) {
-            item { Text(text = "Koch Schritte") }
-            itemsIndexed(cookingSteps) {
-                    index, step ->
-                Column {
-                    Text(text = "${index + 1}")
-                    Row {
-                        OutlinedTextField(
-                            value = step,
-                            onValueChange = {
-                                cookingSteps = changeCookingStepDescription(cookingSteps, it, index)
-                            },
-                            singleLine = false,
-                            minLines = 1
-                        )
+                    item {
                         Button(
                             onClick = {
-                                cookingSteps = removeRecipeStep(cookingSteps, index)
+                                cookingSteps = addNewRecipeStep(cookingSteps)
                             }
                         ) {
-                            Icon(imageVector = Icons.Default.Clear, contentDescription = "Remove cooking step")
+                            Icon(imageVector = Icons.Default.Add, contentDescription = "Add new cooking step")
+                            Text(text = "Add new step")
                         }
                     }
-                }
-            }
-            item {
-                Button(
-                    onClick = {
-                        cookingSteps = addNewRecipeStep(cookingSteps)
-                    }
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add new cooking step")
-                    Text(text = "Add new step")
                 }
             }
         }

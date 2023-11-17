@@ -8,6 +8,7 @@ import com.example.recipeapp.database.events.RecipeEvent
 import com.example.recipeapp.database.tables.Recipe
 import com.example.recipeapp.dataclasses.Ingredients
 import com.example.recipeapp.dataclasses.RecipeSteps
+import com.example.recipeapp.enums.RecipeActivityView
 import com.example.recipeapp.states.RecipeState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,10 +25,20 @@ class RecipeViewModel(
 
     private val _recipeId = mutableIntStateOf(0)
 
-    private val _recipe = MutableStateFlow(Recipe())
+    val recipeActivityView = MutableStateFlow(RecipeActivityView.DEFAULT)
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val recipe = _recipe
-        .flatMapLatest { _ -> recipeDao.getSingleRecipesById(_recipeId.intValue) }
+    val recipe = recipeActivityView
+        .flatMapLatest { mRecipeActivityView ->
+            when (mRecipeActivityView) {
+                RecipeActivityView.NEW -> {
+                    recipeDao.getLatestAddedRecipe()
+                }
+                else -> {
+                    recipeDao.getSingleRecipesById(_recipeId.intValue)
+                }
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Recipe())
 
     private val _state = MutableStateFlow(RecipeState())
@@ -94,6 +105,10 @@ class RecipeViewModel(
 
             is RecipeEvent.SetRecipeId -> {
                 _recipeId.intValue = event.recipeId
+            }
+
+            is RecipeEvent.SetRecipeActivityView ->  {
+
             }
 
             else -> {}
