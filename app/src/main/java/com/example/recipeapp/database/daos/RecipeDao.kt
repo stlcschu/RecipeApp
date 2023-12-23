@@ -20,7 +20,7 @@ interface RecipeDao {
     fun getSingleRecipesById(id: Int) : Flow<Recipe>
 
     @Transaction
-    @Query("SELECT * FROM Recipe ORDER BY dateTimeAdded LIMIT 1")
+    @Query("SELECT * FROM Recipe ORDER BY dateTimeAdded DESC LIMIT 1")
     fun getLatestAddedRecipe() : Flow<Recipe>
 
     @Upsert

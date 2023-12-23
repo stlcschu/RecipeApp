@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.Button
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
@@ -31,21 +32,27 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentComposer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
+import com.example.recipeapp.NewRecipeActivity
 import com.example.recipeapp.RecipeActivity
 import com.example.recipeapp.RecipeActivity.Companion.RECIPE_CALL_REASON_KEY_NAME
 import com.example.recipeapp.RecipeActivity.Companion.RECIPE_ID_KEY_NAME
 import com.example.recipeapp.database.events.RecipeEvent
 import com.example.recipeapp.database.tables.Recipe
-import com.example.recipeapp.enums.RecipeActivityView
+import com.example.recipeapp.enums.RecipeActivityCall
 import com.example.recipeapp.states.RecipeState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter", "UnrememberedMutableState")
 @Composable
 fun MainView(
     state: RecipeState,
@@ -54,6 +61,10 @@ fun MainView(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var recompose = mutableStateOf(false)
+    if (recompose.value) {
+        currentComposer.composition.recompose()
+    }
     ModalNavigationDrawer(
         drawerContent = {
             ModalDrawerSheet {
@@ -81,8 +92,8 @@ fun MainView(
         Scaffold (
             floatingActionButton = {
                 FloatingActionButton(onClick = {
-                    startActivity(context, Intent(context, RecipeActivity::class.java).apply {
-                        putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityView.NEW.stringify)
+                    startActivity(context, Intent(context, NewRecipeActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NO_HISTORY
                     }, null)
                 }) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = "Add new Recipe")
@@ -103,6 +114,13 @@ fun MainView(
                                 imageVector = Icons.Filled.Menu,
                                 contentDescription = "Localized description"
                             )
+                        }
+                    },
+                    actions = {
+                        Button(onClick = {
+                            recompose.value = true
+                        }) {
+                            Text(text = "Reload")
                         }
                     }
                 )
@@ -141,7 +159,7 @@ fun RecipeTile(
             .clickable {
                 startActivity(context, Intent(context, RecipeActivity::class.java).apply {
                     putExtra(RECIPE_ID_KEY_NAME, recipe.id)
-                    putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityView.DEFAULT.stringify)
+                    putExtra(RECIPE_CALL_REASON_KEY_NAME, RecipeActivityCall.FROM_DEFAULT.stringify)
                 }, null)
             }
     ) {

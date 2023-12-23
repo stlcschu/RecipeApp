@@ -15,7 +15,6 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.ExposedDropdownMenuDefaults
-import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
@@ -47,30 +46,31 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.text.isDigitsOnly
 import com.example.recipeapp.MainActivity
-import com.example.recipeapp.RecipeActivity
 import com.example.recipeapp.database.events.RecipeEvent
+import com.example.recipeapp.database.tables.Recipe
+import com.example.recipeapp.dataclasses.EditingRecipe
 import com.example.recipeapp.dataclasses.Ingredient
 import com.example.recipeapp.dataclasses.Ingredients
 import com.example.recipeapp.dataclasses.RecipeSteps
 import com.example.recipeapp.enums.MeasuringUnit
-import com.example.recipeapp.enums.RecipeActivityView
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun NewEditRecipeView(
+fun EditRecipeView(
     onEvent: (RecipeEvent) -> Unit,
-    context: Context
+    context: Context,
+    recipe: EditingRecipe
 ) {
 
-    var ingredientNames by remember { mutableStateOf(listOf<String>()) }
-    var ingredientAmounts by remember { mutableStateOf(listOf<Int>()) }
-    var ingredientMeasuringUnits by remember { mutableStateOf(listOf<MeasuringUnit>()) }
-    var cookingSteps by remember { mutableStateOf(listOf<String>()) }
-    var recipeName by remember { mutableStateOf("") }
+    var ingredientNames by remember { mutableStateOf(recipe.ingredientNames) }
+    var ingredientAmounts by remember { mutableStateOf(recipe.ingredientAmounts) }
+    var ingredientMeasuringUnits by remember { mutableStateOf(recipe.ingredientMeasurements) }
+    var cookingSteps by remember { mutableStateOf(recipe.cookingSteps) }
+    var recipeName by remember { mutableStateOf(recipe.recipeName) }
     val measuringUnits = MeasuringUnit.convertToList()
-    var measuringUnitsDropDown by remember { mutableStateOf(listOf<Boolean>()) }
+    var measuringUnitsDropDown by remember { mutableStateOf(recipe.measurementUnitDropDown) }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -81,9 +81,16 @@ fun NewEditRecipeView(
                 Divider()
                 NavigationDrawerItem(
                     label = { Text(text = "Home") },
-                    selected = true,
+                    selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
+                        scope.launch {
+                            drawerState.close()
+                            startActivity(
+                                context,
+                                Intent(context, MainActivity::class.java),
+                                null
+                            )
+                        }
 
                     }
                 )

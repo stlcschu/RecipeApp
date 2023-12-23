@@ -26,20 +26,16 @@
         </activity>
 
         <activity android:name=".RecipeActivity" android:label="Recipe Activity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="true"/>
+
+        <activity android:name=".NewRecipeActivity" android:label="New Recipe Activity"
+            android:exported="true"/>
+
+        <activity android:name=".EditRecipeActivity" android:label="Edit Recipe Activity"
+            android:exported="true"/>
 
         <activity android:name=".SettingsActivity" android:label="Settings"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="true"/>
 
     </application>
 

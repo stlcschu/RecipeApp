@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Button
 import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
@@ -27,13 +28,19 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startActivity
+import com.example.recipeapp.MainActivity
 import com.example.recipeapp.RecipeActivity
 import com.example.recipeapp.database.events.RecipeEvent
-import com.example.recipeapp.enums.RecipeActivityView
 import com.example.recipeapp.states.RecipeState
 import kotlinx.coroutines.launch
 
@@ -58,9 +65,16 @@ fun RecipeView(
                 androidx.compose.material3.Divider()
                 NavigationDrawerItem(
                     label = { Text(text = "Home") },
-                    selected = true,
+                    selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
+                        scope.launch {
+                            drawerState.close()
+                            startActivity(
+                                context,
+                                Intent(context, MainActivity::class.java),
+                                null
+                            )
+                        }
 
                     }
                 )
@@ -95,7 +109,7 @@ fun RecipeView(
                     },
                     actions = {
                         IconButton(onClick = {
-
+                            //TODO
                         }) {
                             Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit recipe")
                         }
@@ -103,6 +117,7 @@ fun RecipeView(
                 )
             }
         ) {
+
             Column {
                 var stepsCounter = 0
                 LazyColumn(

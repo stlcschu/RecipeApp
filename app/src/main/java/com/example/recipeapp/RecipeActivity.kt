@@ -2,6 +2,7 @@ package com.example.recipeapp
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -11,12 +12,11 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
-import com.example.recipeapp.composables.recipes.NewEditRecipeView
 import com.example.recipeapp.composables.recipes.RecipeView
 import com.example.recipeapp.database.AppDatabase
 import com.example.recipeapp.database.events.RecipeEvent
 import com.example.recipeapp.database.viewModels.RecipeViewModel
-import com.example.recipeapp.enums.RecipeActivityView
+import com.example.recipeapp.enums.RecipeActivityCall
 
 class RecipeActivity : ComponentActivity() {
 
@@ -43,12 +43,15 @@ class RecipeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val callReason = intent.extras!!.getString(RECIPE_CALL_REASON_KEY_NAME)
-            ?.let { RecipeActivityView.fromString(it) }
+            ?.let { RecipeActivityCall.fromString(it) }
         recipesViewModel.onEvent(RecipeEvent.SetRecipeActivityView(callReason!!))
         setContent {
             when(callReason) {
-                RecipeActivityView.NEW -> NewEditRecipeView(onEvent = recipesViewModel::onEvent, context = this@RecipeActivity)
-                RecipeActivityView.EDIT -> TODO()
+                RecipeActivityCall.FROM_NEW -> {
+                    val state by recipesViewModel.state.collectAsState()
+                    Log.i("NAME", state.recipeName)
+                    RecipeView(state = state, onEvent = recipesViewModel::onEvent, context = this@RecipeActivity)
+                }
                 else -> {
                     val recipeId = intent.extras!!.getInt(RECIPE_ID_KEY_NAME)
                     recipesViewModel.onEvent(RecipeEvent.SetRecipeId(recipeId))
@@ -58,6 +61,11 @@ class RecipeActivity : ComponentActivity() {
             }
 
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        recipesViewModel.onEvent(RecipeEvent.SetRecipeId(0))
     }
 
     companion object {
