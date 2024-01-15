@@ -51,6 +51,7 @@ import com.example.recipeapp.database.tables.Recipe
 import com.example.recipeapp.dataclasses.EditingRecipe
 import com.example.recipeapp.dataclasses.Ingredient
 import com.example.recipeapp.dataclasses.Ingredients
+import com.example.recipeapp.dataclasses.RecipeStep
 import com.example.recipeapp.dataclasses.RecipeSteps
 import com.example.recipeapp.enums.MeasuringUnit
 import kotlinx.coroutines.launch
@@ -275,7 +276,7 @@ fun EditRecipeView(
                             Text(text = "${index + 1}")
                             Row {
                                 OutlinedTextField(
-                                    value = step,
+                                    value = step.description,
                                     onValueChange = {
                                         cookingSteps = changeCookingStepDescription(cookingSteps, it, index)
                                     },
@@ -357,21 +358,20 @@ private fun changeIngredientMeasuringUnit(ingredientMeasuringUnits: List<Measuri
     return newIngredients
 }
 
-private fun addNewRecipeStep(recipeSteps: List<String>) : List<String> {
-    val newRecipeSteps = recipeSteps.toMutableList()
-    newRecipeSteps.add("")
-    return newRecipeSteps
+private fun addNewRecipeStep(recipeSteps: List<RecipeStep>) : List<RecipeStep> {
+    recipeSteps.toMutableList().add(RecipeStep())
+    return recipeSteps
 }
 
-private fun removeRecipeStep(recipeSteps: List<String>, index: Int) : List<String> {
+private fun removeRecipeStep(recipeSteps: List<RecipeStep>, index: Int) : List<RecipeStep> {
     val newRecipeSteps = recipeSteps.toMutableList()
     newRecipeSteps.removeAt(index)
     return newRecipeSteps
 }
 
-private fun changeCookingStepDescription(recipeSteps: List<String>, value: String, index: Int) : List<String> {
+private fun changeCookingStepDescription(recipeSteps: List<RecipeStep>, value: String, index: Int) : List<RecipeStep> {
     val newRecipeSteps = recipeSteps.toMutableList()
-    newRecipeSteps[index] = value
+    newRecipeSteps[index].description = value
     return newRecipeSteps
 }
 

@@ -7,6 +7,6 @@ data class EditingRecipe(
     val ingredientNames: List<String>,
     val ingredientAmounts: List<Int>,
     val ingredientMeasurements: List<MeasuringUnit>,
-    val cookingSteps: List<String>,
+    val cookingSteps: List<RecipeStep>,
     val measurementUnitDropDown: List<Boolean>
 )

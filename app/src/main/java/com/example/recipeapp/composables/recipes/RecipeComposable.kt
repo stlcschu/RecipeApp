@@ -3,6 +3,7 @@ package com.example.recipeapp.composables.recipes
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +42,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import com.example.recipeapp.MainActivity
 import com.example.recipeapp.RecipeActivity
+import com.example.recipeapp.composables.CookingStepView
 import com.example.recipeapp.database.events.RecipeEvent
 import com.example.recipeapp.states.RecipeState
 import kotlinx.coroutines.launch
@@ -134,6 +137,11 @@ fun RecipeView(
                     }
                 }
                 Divider()
+                Row(
+
+                ) {
+
+                }
                 LazyColumn(
 
                 ) {
@@ -141,8 +149,33 @@ fun RecipeView(
                     items(recipeSteps.steps) {
                             recipeStep ->
                         Row {
-                            Text(text = "${++stepsCounter}")
-                            Text(text = recipeStep)
+                            Column(
+
+                            ) {
+                                Text(text = "${++stepsCounter}")
+                                Text(text = recipeStep.description)
+                            }
+                            Column(
+
+                            ) {
+                                Text(text = "Timer")
+                                for (stepTimer in recipeStep.stepTimer) {
+                                    Text(text = "timer")
+                                    Column(
+
+                                    ) {
+                                        Row(
+
+                                        ) {
+                                            Text(text = stepTimer.name)
+                                            Button(onClick = { /*TODO*/ }) {
+                                                Image(imageVector = Icons.Default.PlayArrow, contentDescription = "Start timer")
+                                            }
+                                        }
+                                        Text(text = stepTimer.toString2())
+                                    }
+                                }
+                            }
                         }
                     }
                 }

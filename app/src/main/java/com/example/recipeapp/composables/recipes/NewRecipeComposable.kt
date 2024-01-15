@@ -6,8 +6,10 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
@@ -30,12 +32,16 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,10 +55,14 @@ import com.example.recipeapp.MainActivity
 import com.example.recipeapp.RecipeActivity.Companion.RECIPE_CALL_REASON_KEY_NAME
 import com.example.recipeapp.RecipeActivity.Companion.RECIPE_ID_KEY_NAME
 import com.example.recipeapp.RecipeActivity
+import com.example.recipeapp.composables.AddTimerComposable
+import com.example.recipeapp.composables.DialogComposable
 import com.example.recipeapp.database.events.RecipeEvent
 import com.example.recipeapp.dataclasses.Ingredient
 import com.example.recipeapp.dataclasses.Ingredients
+import com.example.recipeapp.dataclasses.RecipeStep
 import com.example.recipeapp.dataclasses.RecipeSteps
+import com.example.recipeapp.dataclasses.StepTimer
 import com.example.recipeapp.enums.MeasuringUnit
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -73,9 +83,17 @@ fun NewRecipeView(
     var ingredientAmounts by remember { mutableStateOf(listOf<Int>()) }
     var ingredientMeasuringUnits by remember { mutableStateOf(listOf<MeasuringUnit>()) }
     var cookingSteps by remember { mutableStateOf(listOf<String>()) }
+    var recipeSteps by remember { mutableStateOf(listOf<RecipeStep>()) }
     var recipeName by remember { mutableStateOf("") }
     val measuringUnits = MeasuringUnit.convertToList()
     var measuringUnitsDropDown by remember { mutableStateOf(listOf<Boolean>()) }
+    var stepTimerValue by remember { mutableFloatStateOf(0f) }
+    var stepTimerLabel by remember { mutableStateOf("") }
+    val showTimerDialog = remember { mutableStateOf(false) }
+
+    var stepTimer by remember { mutableStateOf(listOf<StepTimer>()) }
+    var stepTimerStepIndex by remember { mutableStateOf(listOf<Int>()) }
+    val addTimerToIndexStep = remember { mutableIntStateOf(-1) }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -114,7 +132,7 @@ fun NewRecipeView(
             topBar = {
                 CenterAlignedTopAppBar(
                     title = {
-                        Text(text = "")
+                        Text(text = "New Recipe")
                     },
                     navigationIcon = {
                         IconButton(
@@ -141,32 +159,22 @@ fun NewRecipeView(
                                 )
                             )
 
+                            val steps = combineStatesToCookingRecipeList(recipeSteps = recipeSteps, stepTimer = stepTimer, stepTimerToStep = stepTimerStepIndex)
                             onEvent(
                                 RecipeEvent.SetRecipeSteps(
-                                    RecipeSteps(steps = cookingSteps, amountOfSteps = cookingSteps.size)
+                                    RecipeSteps(steps = steps, amountOfSteps = steps.size)
                                 )
                             )
-//                            val errorHandler = CoroutineExceptionHandler { _, error -> /*handleReject*/ }
-//                            CoroutineScope(errorHandler).launch {
-//                                val a = async(Dispatchers.IO) {
-                                    onEvent(
-                                        RecipeEvent.SaveRecipe
-                                    )
-//                                }
-//                                a.await()
-//                            startActivity(
-//                                context,
-//                                Intent(context, MainActivity::class.java),
-//                                null
-//                            )
-                                startActivity(
-                                    context,
-                                    Intent(context, RecipeActivity::class.java).apply {
-                                        putExtra(RECIPE_CALL_REASON_KEY_NAME, "FROM_NEW")
-                                    },
-                                    null
-                                )
-//                            }
+                            onEvent(
+                                RecipeEvent.SaveRecipe
+                            )
+                            startActivity(
+                                context,
+                                Intent(context, RecipeActivity::class.java).apply {
+                                    putExtra(RECIPE_CALL_REASON_KEY_NAME, "FROM_NEW")
+                                },
+                                null
+                            )
                         }) {
                             Icon(imageVector = Icons.Default.Done, contentDescription = "Save Recipe")
                         }
@@ -174,7 +182,33 @@ fun NewRecipeView(
                 )
             }
         ) {
-            Column() {
+            if (showTimerDialog.value) {
+                DialogComposable(
+                    onDismissRequest = {
+                        showTimerDialog.value = false
+                    },
+                    onConfirmation = {
+                        showTimerDialog.value = false
+                        stepTimer = addTimerToTimerList(stepTimer, StepTimer(stepTimerLabel, stepTimerValue.toInt()))
+                        stepTimerStepIndex = addTimerToIndexList(stepTimerStepIndex, addTimerToIndexStep.intValue)
+                        addTimerToIndexStep.intValue = -1
+                        stepTimerLabel = ""
+                    },
+                    content = {
+                        AddTimerComposable(
+                            timerValue = stepTimerValue,
+                            onTimerValueChanged = { stepTimerValue = it },
+                            labelValue = stepTimerLabel,
+                            onLabelValueChanged = { stepTimerLabel = it }
+                        )
+                    },
+                    confirmText = "Save",
+                    dismissText = "Cancel"
+                )
+            }
+            Column(
+
+            ) {
                 OutlinedTextField(
                     value = recipeName,
                     onValueChange = {
@@ -294,6 +328,7 @@ fun NewRecipeView(
                                 OutlinedTextField(
                                     value = step,
                                     onValueChange = {
+                                        recipeSteps = changeRecipeStepDescription(recipeSteps, it, index)
                                         cookingSteps = changeCookingStepDescription(cookingSteps, it, index)
                                     },
                                     singleLine = false,
@@ -301,10 +336,42 @@ fun NewRecipeView(
                                 )
                                 Button(
                                     onClick = {
-                                        cookingSteps = removeRecipeStep(cookingSteps, index)
+                                        recipeSteps = removeRecipeStep(recipeSteps, index)
+                                        cookingSteps = removeCookingStep(cookingSteps, index)
                                     }
                                 ) {
                                     Icon(imageVector = Icons.Default.Clear, contentDescription = "Remove cooking step")
+                                }
+                            }
+                            LazyRow() {
+                                itemsIndexed(stepTimer) {
+                                    index2, item ->
+                                    if (stepTimerStepIndex[index2] == index) {
+                                        InputChip(
+                                            selected = true,
+                                            onClick = {
+
+                                            },
+                                            label = {
+                                                Text(text = item.toString())
+                                            },
+                                            trailingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.Clear,
+                                                    contentDescription = "Trailing icon",
+                                                    Modifier.size(InputChipDefaults.AvatarSize)
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
+                                item {
+                                    Button(onClick = {
+                                        addTimerToIndexStep.intValue = index
+                                        showTimerDialog.value = true
+                                    }) {
+                                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add timer to cooking step")
+                                    }
                                 }
                             }
                         }
@@ -312,7 +379,8 @@ fun NewRecipeView(
                     item {
                         Button(
                             onClick = {
-                                cookingSteps = addNewRecipeStep(cookingSteps)
+                                recipeSteps = addNewRecipeStep(recipeSteps)
+                                cookingSteps = addNewCookingStep(cookingSteps)
                             }
                         ) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = "Add new cooking step")
@@ -374,15 +442,43 @@ private fun changeIngredientMeasuringUnit(ingredientMeasuringUnits: List<Measuri
     return newIngredients
 }
 
-private fun addNewRecipeStep(recipeSteps: List<String>) : List<String> {
+private fun addNewRecipeStep(recipeSteps: List<RecipeStep>) : List<RecipeStep> {
     val newRecipeSteps = recipeSteps.toMutableList()
-    newRecipeSteps.add("")
+    newRecipeSteps.add(RecipeStep())
     return newRecipeSteps
 }
 
-private fun removeRecipeStep(recipeSteps: List<String>, index: Int) : List<String> {
+private fun addNewCookingStep(cookingSteps: List<String>) : List<String> {
+    val newCookingSteps = cookingSteps.toMutableList()
+    newCookingSteps.add("")
+    return newCookingSteps
+}
+
+private fun addTimerToTimerList(timers: List<StepTimer>, timer: StepTimer) : List<StepTimer> {
+    val tmpList = timers.toMutableList()
+    tmpList.add(timer)
+    return tmpList
+}
+
+private fun addTimerToIndexList(timerToIndices: List<Int>, index: Int) : List<Int> {
+    val tmpList = timerToIndices.toMutableList()
+    tmpList.add(index)
+    return tmpList
+}
+
+private fun removeRecipeStep(recipeSteps: List<RecipeStep>, index: Int) : List<RecipeStep> {
+    recipeSteps.toMutableList().removeAt(index)
+    return recipeSteps
+}
+
+private fun removeCookingStep(cookingSteps: List<String>, index: Int) : List<String> {
+    cookingSteps.toMutableList().removeAt(index)
+    return cookingSteps
+}
+
+private fun changeRecipeStepDescription(recipeSteps: List<RecipeStep>, value: String, index: Int) : List<RecipeStep> {
     val newRecipeSteps = recipeSteps.toMutableList()
-    newRecipeSteps.removeAt(index)
+    newRecipeSteps[index].description = value
     return newRecipeSteps
 }
 
@@ -410,4 +506,20 @@ private fun combineStatesToIngredientsList(ingredientsNames: List<String>, ingre
         )
     }
     return ingredientsList
+}
+
+private fun combineStatesToCookingRecipeList(recipeSteps: List<RecipeStep>, stepTimer: List<StepTimer>, stepTimerToStep: List<Int>) : List<RecipeStep> {
+    if (stepTimer.isEmpty()) return recipeSteps
+    val tmpTimer = mutableListOf<StepTimer>()
+    recipeSteps.forEachIndexed { index, step ->
+        for ((index2, value) in stepTimerToStep.withIndex()) {
+            if (value > index) break
+            if (value != index) continue
+            tmpTimer.add(
+                stepTimer[index2]
+            )
+        }
+        step.stepTimer = tmpTimer
+    }
+    return recipeSteps
 }
